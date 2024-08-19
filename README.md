@@ -18,8 +18,18 @@ The full data flow, from event triggering can be seen is the picture below. Ther
 ![all_handlers in docs folder](https://github.com/LiveIntent/espresso/blob/main/docs/espresso_flow_all_handlers.png "Full flow")
 
 ## class structure
-All handlers rely on the the main class hierarchy for the BaseProcessor.  BaseProcessor provides default implementation for daily maintenance called by the daily maintenance lambda, getting custome fields name, getting access tokens in the secret manager, processing auth_request used by the auth_handler lambad, as well as the abstract method definition for processing authentication, updating the lctg value and lctg updates used by the espresso_integration_processor lambda. It also provides basic work and helpers for authentication and API calls. 
+All handlers rely on the the main class hierarchy for the BaseProcessor. 
+- BaseProcessor provides default implementation for daily maintenance called by the daily maintenance lambda, getting custome fields name, getting access tokens in the secret manager, processing auth_request used by the auth_handler lambad, as well as the abstract method definition for processing authentication, updating the lctg value and lctg updates used by the espresso_integration_processor lambda. It also provides basic work and helpers for authentication and API calls.
+- There are three types of implementation of BaseProcessor depending on the authentication requirement.
+  - APIKeyProcessor for ESPs that require a regular key for authorization.
+  - OAouthProcessors for ESPs that require oAuth for authentication.
+  - AuthProcessor for implementation that will not connect directly to ESP via Espresso. 
+- Each ESP will then have its own subclass of one of the Auth subclass of BaseProcessor. For example.
+  - Mailerlite as an example of APIKeyProcessor
+  - drip  as an example of OAuthProcessor
+  - Listrak is an example of an AuthProcessor which is used only for authentication and does not update the ESP. You can see it by the fact that it did not overwrite update_contact_lctg_value(). Applications outside Espresso then use this authentication.
 ![hierarchy png is in docs folder](https://github.com/LiveIntent/espresso/blob/main/docs/espresso_classes.png "Class hierarchy")
+
 
 The daily Maintenance is scheduled daily
 The auth are triggered via 
