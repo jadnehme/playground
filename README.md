@@ -8,17 +8,17 @@ The full diagrams can be found on a [miro page](https://miro.com/app/board/uXjVK
 
 ## Data Flow
 
-The full data flow, from event triggering can be seen is the picture below. There are 5 lambda functions that work together.
-- **auth_handler** which is triggered by a visit (or API call) to one of the auth page and handles web interaction as well as validating and saving the credentials. Auth_handler redirects to pages which retriger a aut_handler call for validation/success.
-- **job_coordination** which is triggered daily, queries for each configuration and saves the results in S3 buket.
-- **daily_maintenance** which is triggered (if configured as such) by the job_coordination, validates credentials daily and does housekeeping such as recreating fields on the ESP
-- **push_dispatcher** which is triggered by files being written on the same S3 bucket which job coordination writes. Push dispatcher then converts the files into queued events.
+The full data flow, starting with event triggering to the completion of the lambda function can be viewed in the picture below. There are 5 lambda functions that work together.
+- **auth_handler** is triggered by a visit (or API call) to one of the auth page. auth_handle and handles interaction to save and validate credentials. it redirects to pages which retriger a aut_handler call for validation/success.
+- **job_coordination** is scheduled daily. That lamba queries dynamo for each job, queries athena logs for entries that are in the config but are missing lctg values and saves these entries in an S3 bucket.
+- **daily_maintenance** is triggered  by the job_coordination (if configured as such). It validates credentials daily and does housekeeping such as recreating fields on the ESP.
+- **push_dispatcher** is triggered by files being written on the same S3 bucket which job coordination writes. push_dispatcher then converts each row of the files into events in a queue..
 - **update_contact** which is triggered by the queue push_dispatcher created and updates the lcee field in the ESP.
   
 ![all_handlers in docs folder](https://github.com/LiveIntent/espresso/blob/main/docs/espresso_flow_all_handlers.png "Full flow")
 
 ## class structure
-All handlers rely on the the main class hierarchy for the BaseProcessor. 
+All handlers rely on the the main class BaseProcessor and its children. 
 - BaseProcessor provides default implementation for daily maintenance called by the daily maintenance lambda, getting custome fields name, getting access tokens in the secret manager, processing auth_request used by the auth_handler lambad, as well as the abstract method definition for processing authentication, updating the lctg value and lctg updates used by the espresso_integration_processor lambda. It also provides basic work and helpers for authentication and API calls.
 - There are three types of implementation of BaseProcessor depending on the authentication requirement.
   - APIKeyProcessor for ESPs that require a regular key for authorization.
